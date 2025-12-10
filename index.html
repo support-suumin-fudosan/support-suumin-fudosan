@@ -6,9 +6,6 @@
   <title>ご相談フォーム</title>
   <meta name="description" content="お部屋探しのご希望条件を1分ほどで入力できる相談フォームです。" />
 
-  <!-- LIFF SDK（プロフィール取得用：任意） -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <style>
     :root{
       --bg: #f7faf8;
@@ -479,6 +476,7 @@
   <div class="page">
     <header>
       <div class="header-inner">
+        <!-- フォーム時ヘッダー -->
         <div class="header-form" id="headerForm">
           <div class="brand">
             <img
@@ -497,6 +495,7 @@
           <div class="pill-note">約1分で入力</div>
         </div>
 
+        <!-- サンクス時ヘッダー -->
         <div class="header-thanks" id="headerThanks">
           <div class="thanks-title">お部屋探しのスーミン</div>
         </div>
@@ -504,6 +503,7 @@
     </header>
 
     <main class="container">
+      <!-- HERO -->
       <section class="hero" id="heroSection">
         <div class="hero-head">
           <span class="meta">希望条件をご入力ください</span>
@@ -514,6 +514,7 @@
         </div>
       </section>
 
+      <!-- THANK YOU STAGE -->
       <div class="thankyou-stage" id="thankYouStage" style="display:none;">
         <div style="width:100%;">
           <section class="thankyou" id="thankYouSection">
@@ -524,6 +525,7 @@
             </div>
 
             <div class="done-kicker">送信完了</div>
+
             <h2>ご回答ありがとうございます😌</h2>
 
             <p class="thankyou-body">
@@ -545,7 +547,9 @@
         </div>
       </div>
 
+      <!-- FORM -->
       <form id="consultForm" novalidate>
+        <!-- 基本情報 -->
         <div class="section">
           <div class="grid-2">
             <div class="field">
@@ -593,6 +597,7 @@
           </div>
         </div>
 
+        <!-- 住み替え理由 -->
         <div class="section">
           <div class="section-title">住み替えの理由 <span class="req">必須</span></div>
           <div class="section-sub">（複数選択可）</div>
@@ -619,6 +624,7 @@
           <div class="error" data-error-for="reasons">住み替え理由を1つ以上選択してください。</div>
         </div>
 
+        <!-- 希望条件 -->
         <div class="section">
           <div class="field">
             <div class="section-title">希望エリア <span class="req">必須</span></div>
@@ -691,6 +697,7 @@
           </div>
         </div>
 
+        <!-- 連絡先 -->
         <div class="section">
           <div class="section-title">ご連絡先</div>
 
@@ -709,6 +716,7 @@
           </div>
         </div>
 
+        <!-- アクション -->
         <div class="actions">
           <button class="btn btn-primary" type="submit">回答する</button>
           <button class="btn btn-ghost" type="reset">入力をリセット</button>
@@ -720,36 +728,33 @@
     <footer></footer>
   </div>
 
-  <script>
-    // =========================
-    // LIFF settings（プロフィール取得は任意）
-    // =========================
-    const LIFF_ID = "2008661885-z2ZKEaeA";
+  <!-- Firebase + フォーム処理 -->
+  <script type="module">
+    // Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-    // あなたのGAS Web App URL（反映済み）
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwo6R0zvkaXFBM1AOskNLpAWini8lwZgP2MqwccD3uEhFeeVOPj7OjsF2TrdXUaa_7h9A/exec";
+    // あなたの firebaseConfig（そのまま使用）
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2r1G9errZ-Nd9_EuvybodxCngs-4IYDg",
+      authDomain: "suumin-room-search.firebaseapp.com",
+      projectId: "suumin-room-search",
+      storageBucket: "suumin-room-search.firebasestorage.app",
+      messagingSenderId: "298906989524",
+      appId: "1:298906989524:web:aca5bfafad6d6089bf9c41",
+      measurementId: "G-YGD6ZYVLVQ"
+    };
 
-    let liffReady = false;
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
 
-    async function initLiffSafe(){
-      try{
-        if (!window.liff) return;
-        await liff.init({
-          liffId: LIFF_ID,
-          withLoginOnExternalBrowser: true
-        });
-        liffReady = true;
-      }catch(e){
-        liffReady = false;
-      }
-    }
-
-    window.addEventListener("load", () => {
-      initLiffSafe();
-    });
-  </script>
-
-  <script>
     (function(){
       const form = document.getElementById("consultForm");
       const msg = document.getElementById("formMsg");
@@ -865,30 +870,6 @@
         };
       };
 
-      const enrichWithProfile = async (payload) => {
-        try{
-          if (window.liff && liffReady && liff.isLoggedIn()) {
-            const profile = await liff.getProfile();
-            return {
-              ...payload,
-              lineUserId: profile.userId,
-              lineName: profile.displayName
-            };
-          }
-        }catch(e){}
-        return payload;
-      };
-
-      const postToGas = async (payload) => {
-        if (!GAS_URL) throw new Error("GAS_URL is empty");
-        // CORS事故回避のため text/plain
-        await fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-      };
-
       const showThankYouView = () => {
         try{
           if (document.activeElement && typeof document.activeElement.blur === "function") {
@@ -961,6 +942,18 @@
 
       wireLiveClear();
 
+      // Firestore 保存処理
+      const saveToFirestore = async (payload) => {
+        const docRef = await addDoc(
+          collection(db, "roomInquiries"), // コレクション名（変更したければここ）
+          {
+            ...payload,
+            createdAt: serverTimestamp()
+          }
+        );
+        return docRef.id;
+      };
+
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         msg.textContent = "";
@@ -968,19 +961,15 @@
         const ok = validateAll();
         if (!ok) return;
 
-        let payload = buildPayload();
-        payload = await enrichWithProfile(payload);
+        const payload = buildPayload();
 
         try{
-          await postToGas(payload);
+          await saveToFirestore(payload);
+          showThankYouView();
         }catch(err){
-          // UX優先：通信失敗でもサンクスへ
-          // もし厳密運用したいなら下の2行に変更
-          // msg.textContent = "送信に失敗しました。通信環境を確認して再度お試しください。";
-          // return;
+          console.error(err);
+          msg.textContent = "送信中にエラーが発生しました。お手数ですが、時間をおいて再度お試しください。";
         }
-
-        showThankYouView();
       });
 
       form.addEventListener("reset", () => {
