@@ -6,9 +6,6 @@
   <title>ご相談フォーム</title>
   <meta name="description" content="お部屋探しのご希望条件を1分ほどで入力できる相談フォームです。" />
 
-  <!-- LIFF SDK -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
   <style>
     :root{
       --bg: #f7faf8;
@@ -722,29 +719,6 @@
   </div>
 
   <script>
-    // =========================
-    // LIFF settings
-    // =========================
-    const LIFF_ID = "YOUR_LIFF_ID"; // ←ここを差し替え
-
-    let liffReady = false;
-
-    async function initLiffSafe(){
-      try{
-        if (!window.liff) return;
-        await liff.init({ liffId: LIFF_ID });
-        liffReady = true;
-      }catch(e){
-        liffReady = false;
-      }
-    }
-
-    window.addEventListener("load", () => {
-      initLiffSafe();
-    });
-  </script>
-
-  <script>
     (function(){
       // =========================
       // GAS endpoint
@@ -875,59 +849,62 @@
         };
       };
 
-      const buildLineText = (p) => {
-        const reasons = (p.reasons && p.reasons.length) ? p.reasons.join(" / ") : "未選択";
-        const layouts = (p.layouts && p.layouts.length) ? p.layouts.join(" / ") : "未選択";
-        const otherLine = p.reasonOtherDetail ? `\nその他理由：${p.reasonOtherDetail}` : "";
-
-        return (
-`【希望条件フォーム】
-お名前：${p.name}
-職業：${p.occupation}
-入居時期：${p.moveIn}
-住み替え理由：${reasons}${otherLine}
-
-希望エリア：${p.area}
-職場最寄り：${p.workStation || "未記入"}
-間取り：${layouts}
-家賃上限：${p.rentMaxManYen}万円
-築年数：${p.buildingAge || "指定なし"}
-
-こだわり：
-${p.preferences || "未記入"}
-
-電話：${p.phone}`
-        );
-      };
-
       // =========================
-      // GAS送信（最も事故りにくい構成）
-      // URLSearchParams + no-cors
+      // GAS送信（JSON形式で確実な方法に変更）
+      // ※環境によってはCORS/プリフライトが原因で失敗する可能性があるため
+      //   念のため旧方式(no-cors)へフォールバックを用意
       // =========================
       const postToGAS = async (payload) => {
-        const params = new URLSearchParams();
+        // 1) JSON送信（推奨）
+        try{
+          const res = await fetch(GAS_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+            cache: "no-store"
+          });
 
-        Object.entries(payload).forEach(([k, v]) => {
-          if (Array.isArray(v)) {
-            // 受け取りやすいように2系統で入れる
-            params.append(k, v.join(" / "));
-            v.forEach(item => params.append(`${k}[]`, item));
-          } else if (v !== undefined && v !== null) {
-            params.append(k, String(v));
-          } else {
-            params.append(k, "");
+          if (res && res.ok) {
+            return true;
           }
-        });
 
-        // no-cors ならレスポンスは読めないが送信は走る
-        await fetch(GAS_ENDPOINT, {
-          method: "POST",
-          body: params,
-          mode: "no-cors",
-          cache: "no-store"
-        });
+          // res.okが取れる環境ならログに残す
+          console.error("GAS送信失敗: レスポンスエラー", res && res.status);
+        }catch(err){
+          // ブラウザ/WEBVIEWによってはここに落ちる
+          console.warn("GAS JSON送信で例外", err);
+        }
 
-        return true;
+        // 2) フォールバック：URLSearchParams + no-cors
+        try{
+          const params = new URLSearchParams();
+
+          Object.entries(payload).forEach(([k, v]) => {
+            if (Array.isArray(v)) {
+              params.append(k, v.join(" / "));
+              v.forEach(item => params.append(`${k}[]`, item));
+            } else if (v !== undefined && v !== null) {
+              params.append(k, String(v));
+            } else {
+              params.append(k, "");
+            }
+          });
+
+          await fetch(GAS_ENDPOINT, {
+            method: "POST",
+            body: params,
+            mode: "no-cors",
+            cache: "no-store"
+          });
+
+          return true;
+        }catch(err){
+          console.error("GASフォールバック送信も失敗", err);
+        }
+
+        return false;
       };
 
       const showThankYouView = () => {
@@ -1020,24 +997,14 @@ ${p.preferences || "未記入"}
         msg.textContent = "送信中です…";
 
         // ① GASへ送信（メール用）
+        let gasOk = false;
         try{
-          await postToGAS(payload);
+          gasOk = await postToGAS(payload);
         }catch(err){
-          // 体験優先。必要ならconsoleで確認
           console.warn("GAS送信失敗", err);
         }
 
-        // ② LINEへ送信（LIFF内なら）
-        try{
-          if (window.liff && liffReady && liff.isInClient()) {
-            const text = buildLineText(payload);
-            await liff.sendMessages([{ type: "text", text }]);
-          }
-        }catch(err){
-          // 送信失敗でもOK
-        }
-
-        msg.textContent = "送信が完了しました。";
+        msg.textContent = gasOk ? "送信が完了しました。" : "送信が完了しました（通信が不安定な可能性があります）。";
 
         showThankYouView();
 
