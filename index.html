@@ -545,22 +545,9 @@
 
       <form id="consultForm" novalidate>
         <div class="section">
-
-          <!-- ✅ 追加：LINE表示名（お名前の上） -->
-          <div class="field">
-            <div class="section-title">LINE表示名 <span class="hint">任意</span></div>
-            <input
-              id="lineName"
-              name="lineName"
-              type="text"
-              placeholder="例：すーみん太郎"
-            />
-          </div>
-
           <div class="grid-2">
             <div class="field">
               <div class="section-title">お名前 <span class="req">必須</span></div>
-              <!-- ❌ 削除：ひらがなだけでも可能です。 -->
               <input id="name" name="name" type="text" required />
               <div class="error" data-error-for="name">お名前を入力してください。</div>
             </div>
@@ -582,6 +569,18 @@
             </div>
           </div>
 
+          <!-- ✅ ここに移動＆必須化：LINE表示名 -->
+          <div class="field">
+            <div class="section-title">LINE表示名 <span class="req">必須</span></div>
+            <input
+              id="lineName"
+              name="lineName"
+              type="text"
+              required
+            />
+            <div class="error" data-error-for="lineName">LINE表示名を入力してください。</div>
+          </div>
+
           <div class="grid-2">
             <div class="field">
               <div class="section-title">ご入居時期 <span class="req">必須</span></div>
@@ -596,11 +595,7 @@
               <div class="error" data-error-for="moveIn">ご入居時期を選択してください。</div>
             </div>
 
-            <div class="field">
-              <!-- ✅ 「任意」表示を削除（項目は残す） -->
-              <div class="section-title">職場の最寄り駅</div>
-              <input id="workStation" name="workStation" type="text" placeholder="例：新宿 / 渋谷 / 大手町" />
-            </div>
+            <!-- ❌ 削除：職場の最寄り駅 -->
           </div>
         </div>
 
@@ -794,8 +789,12 @@
         return false;
       };
 
+      // =========================
+      // Validators（LINE表示名を必須に追加）
+      // =========================
       const validators = {
         name: () => form.name.value.trim().length > 0,
+        lineName: () => form.lineName.value.trim().length > 0,
         occupation: () => !!form.occupation.value.trim(),
         moveIn: () => !!form.moveIn.value.trim(),
         reasons: () => getCheckedValues(`input[name="reasons"]`).length > 0,
@@ -810,7 +809,7 @@
 
       const validateAll = () => {
         let ok = true;
-        const keys = ["name","occupation","moveIn","reasons","area","layouts","rentMax","phone"];
+        const keys = ["name","lineName","occupation","moveIn","reasons","area","layouts","rentMax","phone"];
 
         keys.forEach(k => showError(k, false));
 
@@ -859,6 +858,16 @@
       const clean = (s) => String(s ?? "").replace(/[\r\n]+/g, " ").trim();
       const toSlash = (v) => Array.isArray(v) ? v.join(" / ") : (v ?? "");
 
+      // ✅ その他理由の文言をreasons表示にも混ぜて補強
+      const buildReasonsDisplay = (reasonsArr, otherDetail) => {
+        if (!Array.isArray(reasonsArr)) return "";
+        const hasOther = reasonsArr.includes("その他");
+        if (hasOther && otherDetail) {
+          return reasonsArr.map(r => r === "その他" ? `その他：${otherDetail}` : r).join(" / ");
+        }
+        return reasonsArr.join(" / ");
+      };
+
       const buildEmailParams = () => {
         const reasons = getCheckedValues(`input[name="reasons"]`);
         const layouts = getCheckedValues(`input[name="layouts"]`);
@@ -867,20 +876,20 @@
           : "";
 
         return {
-          // ✅ ISOではなく見やすい形式で送る
           submittedAt: formatDateTime(new Date().toISOString()),
 
-          lineName: clean(form.lineName.value.trim()),
-
           name: clean(form.name.value.trim()),
+          lineName: clean(form.lineName.value.trim()),
           occupation: form.occupation.value.trim(),
           moveIn: form.moveIn.value.trim(),
 
-          reasons: toSlash(reasons),
+          // ✅ 表示用reasonsも強化
+          reasons: buildReasonsDisplay(reasons, otherText),
+
+          // ✅ 「その他」内容を確実に送る
           reasonOtherDetail: otherText,
 
           area: clean(form.area.value.trim()),
-          workStation: form.workStation.value.trim(),
           layouts: toSlash(layouts),
           rentMaxManYen: form.rentMax.value ? String(form.rentMax.value) : "",
           buildingAge: form.age.value.trim(),
@@ -929,6 +938,10 @@
       const wireLiveClear = () => {
         form.name.addEventListener("input", () => {
           if (validators.name()) showError("name", false);
+        });
+
+        form.lineName.addEventListener("input", () => {
+          if (validators.lineName()) showError("lineName", false);
         });
 
         form.occupation.addEventListener("change", () => {
@@ -1013,7 +1026,7 @@
       // Reset
       // =========================
       form.addEventListener("reset", () => {
-        ["name","occupation","moveIn","reasons","area","layouts","rentMax","phone"]
+        ["name","lineName","occupation","moveIn","reasons","area","layouts","rentMax","phone"]
           .forEach(k => showError(k, false));
         msg.textContent = "";
 
