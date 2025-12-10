@@ -254,7 +254,7 @@
       min-width: 0;
     }
 
-    /* ✅ LINE表示名の後だけ、ほんの少し余白を増やす */
+    /* LINE表示名の後だけ、ほんの少し余白を増やす */
     .field.spacer-after{
       margin-bottom: 22px;
     }
@@ -423,7 +423,7 @@
       animation: fadeInSoft 200ms ease-out;
     }
 
-    /* ✅ 完了バッジを“もう少し緑っぽい薄色”へ */
+    /* 完了バッジを“もう少し緑っぽい薄色”へ */
     .done-badge{
       width: 54px;
       height: 54px;
@@ -551,14 +551,13 @@
 
       <form id="consultForm" novalidate>
         <div class="section">
-          <!-- ✅ 指定順：お名前 → LINE表示名 → ご職業 -->
+          <!-- 指定順：お名前 → LINE表示名 → ご職業 -->
           <div class="field">
             <div class="section-title">お名前 <span class="req">必須</span></div>
             <input id="name" name="name" type="text" required />
             <div class="error" data-error-for="name">お名前を入力してください。</div>
           </div>
 
-          <!-- ✅ ここだけ少し余白強化 -->
           <div class="field spacer-after">
             <div class="section-title">LINE表示名 <span class="req">必須</span></div>
             <input
@@ -599,8 +598,6 @@
               </select>
               <div class="error" data-error-for="moveIn">ご入居時期を選択してください。</div>
             </div>
-
-            <!-- ❌ 削除：職場の最寄り駅 -->
           </div>
         </div>
 
@@ -685,8 +682,11 @@
                 <option>7年以内</option>
                 <option>10年以内</option>
                 <option>15年以内</option>
-                <option>20年以内</option>
-                <option>それ以上</option>
+                <!-- ✅ 指示反映：
+                     「20年以上」→「指定しない」
+                     「それ以上」削除
+                     ※現行リスト上では末尾相当を「指定しない」として整理 -->
+                <option>指定しない</option>
               </select>
             </div>
           </div>
