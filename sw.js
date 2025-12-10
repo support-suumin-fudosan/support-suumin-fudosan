@@ -1,4 +1,4 @@
-const CACHE_NAME = "consult-form-v2";
+const CACHE_NAME = "consult-form-v3";
 const BASE = "/support-suumin-fudosan/";
 
 const ASSETS = [
@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
   // このプロジェクト配下だけ扱う
   if (!url.pathname.startsWith(BASE)) return;
 
-  // ★ページ遷移（HTML）は network-first
+  // ページ遷移（HTML）は network-first
   if (req.mode === "navigate" || req.destination === "document") {
     event.respondWith(
       fetch(req).catch(() => caches.match(BASE + "index.html"))
