@@ -545,10 +545,22 @@
 
       <form id="consultForm" novalidate>
         <div class="section">
+
+          <!-- ✅ 追加：LINE表示名（お名前の上） -->
+          <div class="field">
+            <div class="section-title">LINE表示名 <span class="hint">任意</span></div>
+            <input
+              id="lineName"
+              name="lineName"
+              type="text"
+              placeholder="例：すーみん太郎"
+            />
+          </div>
+
           <div class="grid-2">
             <div class="field">
               <div class="section-title">お名前 <span class="req">必須</span></div>
-              <div class="section-sub">ひらがなだけでも可能です。</div>
+              <!-- ❌ 削除：ひらがなだけでも可能です。 -->
               <input id="name" name="name" type="text" required />
               <div class="error" data-error-for="name">お名前を入力してください。</div>
             </div>
@@ -585,7 +597,8 @@
             </div>
 
             <div class="field">
-              <div class="section-title">職場の最寄り駅 <span class="hint">任意</span></div>
+              <!-- ✅ 「任意」表示を削除（項目は残す） -->
+              <div class="section-title">職場の最寄り駅</div>
               <input id="workStation" name="workStation" type="text" placeholder="例：新宿 / 渋谷 / 大手町" />
             </div>
           </div>
@@ -824,6 +837,23 @@
       syncOtherReasonUI();
 
       // =========================
+      // submittedAt 表記整形
+      // =========================
+      const pad2 = (n) => String(n).padStart(2, "0");
+
+      const formatDateTime = (iso) => {
+        const d = iso ? new Date(iso) : new Date();
+        if (Number.isNaN(d.getTime())) return "";
+        const y = d.getFullYear();
+        const m = pad2(d.getMonth() + 1);
+        const day = pad2(d.getDate());
+        const h = pad2(d.getHours());
+        const min = pad2(d.getMinutes());
+        const s = pad2(d.getSeconds());
+        return `${y}-${m}-${day} ${h}:${min}:${s}`;
+      };
+
+      // =========================
       // EmailJS 用パラメータ構築
       // =========================
       const clean = (s) => String(s ?? "").replace(/[\r\n]+/g, " ").trim();
@@ -837,7 +867,10 @@
           : "";
 
         return {
-          submittedAt: new Date().toISOString(),
+          // ✅ ISOではなく見やすい形式で送る
+          submittedAt: formatDateTime(new Date().toISOString()),
+
+          lineName: clean(form.lineName.value.trim()),
 
           name: clean(form.name.value.trim()),
           occupation: form.occupation.value.trim(),
@@ -853,11 +886,7 @@
           buildingAge: form.age.value.trim(),
 
           preferences: form.preferences.value.trim(),
-          phone: form.phone.value.trim(),
-
-          // テンプレに変数が無くても害なし
-          lineName: "",
-          lineUserId: ""
+          phone: form.phone.value.trim()
         };
       };
 
