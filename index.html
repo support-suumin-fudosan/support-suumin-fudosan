@@ -506,7 +506,7 @@
           <div class="pill-note">約1分で入力</div>
         </div>
 
-        <!-- サンクス時ヘッダー（中央・アイコン/ピルなし） -->
+        <!-- サンクス時ヘッダー -->
         <div class="header-thanks" id="headerThanks">
           <div class="thanks-title">お部屋探しのスーミン</div>
         </div>
@@ -539,7 +539,6 @@
 
             <h2>ご回答ありがとうございます😌</h2>
 
-            <!-- ここを指定の改行・文面に更新 -->
             <p class="thankyou-body">
               いただいた内容をもとに、未公開物件も含めて<br>
               条件に合うお部屋をピックアップします。<br>
@@ -744,15 +743,29 @@
     // =========================
     // LIFF settings
     // =========================
-    const LIFF_ID = "YOUR_LIFF_ID"; // ←ここを差し替え
+    const LIFF_ID = "2008661885-z2ZKEaeA";
+
+    /**
+     * 任意：GAS保存を併用したい場合だけ入れる
+     * 例) https://script.google.com/macros/s/XXXX/exec
+     * 空のままなら送信しません。
+     */
+    const GAS_URL = "";
 
     let liffReady = false;
 
     async function initLiffSafe(){
       try{
         if (!window.liff) return;
-        await liff.init({ liffId: LIFF_ID });
+        await liff.init({
+          liffId: LIFF_ID,
+          withLoginOnExternalBrowser: true
+        });
         liffReady = true;
+
+        // 外部ブラウザでログインが必要なケースに備えたい場合は任意で有効化
+        // if (!liff.isLoggedIn()) liff.login();
+
       }catch(e){
         liffReady = false;
       }
@@ -879,9 +892,13 @@
         };
       };
 
+      const safeJoin = (arr) => {
+        return (Array.isArray(arr) && arr.length) ? arr.join(" / ") : "未選択";
+      };
+
       const buildLineText = (p) => {
-        const reasons = (p.reasons && p.reasons.length) ? p.reasons.join(" / ") : "未選択";
-        const layouts = (p.layouts && p.layouts.length) ? p.layouts.join(" / ") : "未選択";
+        const reasons = safeJoin(p.reasons);
+        const layouts = safeJoin(p.layouts);
         const otherLine = p.reasonOtherDetail ? `\nその他理由：${p.reasonOtherDetail}` : "";
 
         return (
@@ -902,6 +919,31 @@ ${p.preferences || "未記入"}
 
 電話：${p.phone}`
         );
+      };
+
+      const enrichWithProfile = async (payload) => {
+        try{
+          if (window.liff && liffReady && liff.isLoggedIn()) {
+            const profile = await liff.getProfile();
+            return {
+              ...payload,
+              lineUserId: profile.userId,
+              lineName: profile.displayName
+            };
+          }
+        }catch(e){}
+        return payload;
+      };
+
+      const postToGasIfEnabled = async (payload) => {
+        if (!GAS_URL) return;
+        try{
+          await fetch(GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }catch(e){}
       };
 
       const showThankYouView = () => {
@@ -983,16 +1025,20 @@ ${p.preferences || "未記入"}
         const ok = validateAll();
         if (!ok) return;
 
-        const payload = buildPayload();
+        let payload = buildPayload();
+        payload = await enrichWithProfile(payload);
 
+        // 1) GAS保存（任意）
+        await postToGasIfEnabled(payload);
+
+        // 2) 公式LINEにテキストで落とす（LINEアプリ内のみ）
         try{
           if (window.liff && liffReady && liff.isInClient()) {
             const text = buildLineText(payload);
             await liff.sendMessages([{ type: "text", text }]);
+            // liff.closeWindow(); // 任意
           }
-        }catch(err){
-          // 送信失敗でもサンクス表示（体験優先）
-        }
+        }catch(err){}
 
         showThankYouView();
       });
