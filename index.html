@@ -749,9 +749,10 @@
       // =========================
       // GAS endpoint
       // =========================
-      const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbww0vFkft76MXu3TIrleEQgfXekW0Fpi6KH_xlTc2ILIyIgqdaTXQvw8oIctswAb8xlhg/exec";
+      const GAS_ENDPOINT =
+        "https://script.google.com/macros/s/AKfycbww0vFkft76MXu3TIrleEQgfXekW0Fpi6KH_xlTc2ILIyIgqdaTXQvw8oIctswAb8xlhg/exec";
 
-      // GAS が宛先を可変にできる設計なら拾わせるため付与（無視されてもOK）
+      // GASが宛先を可変にできる設計なら拾わせる（無視されてもOK）
       const DEST_EMAIL = "nao.04252001aeo.1977@gmail.com";
 
       const form = document.getElementById("consultForm");
@@ -868,7 +869,9 @@
           preferences: form.preferences.value.trim(),
           phone: form.phone.value.trim(),
           submittedAt: new Date().toISOString(),
-          source: "web-form"
+
+          // “どのページから来たか”判別用
+          source: "suumin-web-form-v1"
         };
       };
 
@@ -898,53 +901,33 @@ ${p.preferences || "未記入"}
       };
 
       // =========================
-      // GAS送信（JSON → 失敗時 URLエンコード）
+      // GAS送信（最も事故りにくい構成）
+      // URLSearchParams + no-cors
       // =========================
       const postToGAS = async (payload) => {
-        // 1) JSONで送る
-        try{
-          const res = await fetch(GAS_ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-            // Apps Script の設定次第でCORSが弱い場合があるので読み取り不要でもOK
-            mode: "cors",
-            cache: "no-store"
-          });
-          // レスポンスを読めなくても送信は走っている可能性がある
-          // 200系なら成功扱い
-          if (res && res.ok) return true;
-        }catch(e){
-          // fallthrough
-        }
+        const params = new URLSearchParams();
 
-        // 2) URLSearchParamsで送る（GASが e.parameter を参照する実装用）
-        try{
-          const flat = new URLSearchParams();
-          Object.keys(payload).forEach(k => {
-            const v = payload[k];
-            if (Array.isArray(v)) {
-              // どちらでも受け取りやすいように2系統で入れる
-              flat.append(k, v.join(" / "));
-              v.forEach(item => flat.append(`${k}[]`, item));
-            } else if (v !== undefined && v !== null) {
-              flat.append(k, String(v));
-            }
-          });
+        Object.entries(payload).forEach(([k, v]) => {
+          if (Array.isArray(v)) {
+            // 受け取りやすいように2系統で入れる
+            params.append(k, v.join(" / "));
+            v.forEach(item => params.append(`${k}[]`, item));
+          } else if (v !== undefined && v !== null) {
+            params.append(k, String(v));
+          } else {
+            params.append(k, "");
+          }
+        });
 
-          const res2 = await fetch(GAS_ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-            body: flat.toString(),
-            mode: "cors",
-            cache: "no-store"
-          });
-          if (res2 && res2.ok) return true;
-        }catch(e2){
-          // ignore
-        }
+        // no-cors ならレスポンスは読めないが送信は走る
+        await fetch(GAS_ENDPOINT, {
+          method: "POST",
+          body: params,
+          mode: "no-cors",
+          cache: "no-store"
+        });
 
-        return false;
+        return true;
       };
 
       const showThankYouView = () => {
@@ -1028,7 +1011,7 @@ ${p.preferences || "未記入"}
 
         const payload = buildPayload();
 
-        // ボタン連打防止の軽いUI
+        // ボタン連打防止
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) {
           submitBtn.disabled = true;
@@ -1037,11 +1020,11 @@ ${p.preferences || "未記入"}
         msg.textContent = "送信中です…";
 
         // ① GASへ送信（メール用）
-        let gasOk = false;
         try{
-          gasOk = await postToGAS(payload);
+          await postToGAS(payload);
         }catch(err){
-          gasOk = false;
+          // 体験優先。必要ならconsoleで確認
+          console.warn("GAS送信失敗", err);
         }
 
         // ② LINEへ送信（LIFF内なら）
@@ -1051,13 +1034,10 @@ ${p.preferences || "未記入"}
             await liff.sendMessages([{ type: "text", text }]);
           }
         }catch(err){
-          // 送信失敗でもOK（体験優先）
+          // 送信失敗でもOK
         }
 
-        // 体験優先：GAS失敗でもサンクスは出す
-        msg.textContent = gasOk
-          ? "送信が完了しました。"
-          : "送信が完了しました。";
+        msg.textContent = "送信が完了しました。";
 
         showThankYouView();
 
