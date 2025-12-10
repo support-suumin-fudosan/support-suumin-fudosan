@@ -254,6 +254,11 @@
       min-width: 0;
     }
 
+    /* ✅ LINE表示名の後だけ、ほんの少し余白を増やす */
+    .field.spacer-after{
+      margin-bottom: 22px;
+    }
+
     input[type="text"],
     input[type="tel"],
     input[type="number"],
@@ -418,13 +423,14 @@
       animation: fadeInSoft 200ms ease-out;
     }
 
+    /* ✅ 完了バッジを“もう少し緑っぽい薄色”へ */
     .done-badge{
       width: 54px;
       height: 54px;
       border-radius: 50%;
       margin: 0 auto 10px;
-      background: linear-gradient(135deg, #dff6ea, #eafaf2);
-      border: 1px solid rgba(31,157,99,0.18);
+      background: linear-gradient(135deg, #d6f5e3, #ecfbf3);
+      border: 1px solid rgba(31,157,99,0.22);
       display: grid;
       place-items: center;
       box-shadow: 0 8px 16px rgba(2, 24, 12, 0.06);
@@ -552,7 +558,8 @@
             <div class="error" data-error-for="name">お名前を入力してください。</div>
           </div>
 
-          <div class="field">
+          <!-- ✅ ここだけ少し余白強化 -->
+          <div class="field spacer-after">
             <div class="section-title">LINE表示名 <span class="req">必須</span></div>
             <input
               id="lineName"
@@ -679,9 +686,8 @@
                 <option>10年以内</option>
                 <option>15年以内</option>
                 <option>20年以内</option>
-                <option>その他</option>
+                <option>それ以上</option>
               </select>
-              <!-- ✅ 指示により削除：こだわりがなければ未選択でOK。 -->
             </div>
           </div>
 
@@ -690,7 +696,7 @@
             <textarea
               id="preferences"
               name="preferences"
-              placeholder="例：2階以上/バストイレ別/宅配BOX /角部屋/ペット可/駐車場有など"
+              placeholder="例：2階以上/バストイレ別/宅配BOX/角部屋/ペット可/駐車場有など"
             ></textarea>
           </div>
         </div>
@@ -856,9 +862,9 @@
       const clean = (s) => String(s ?? "").replace(/[\r\n]+/g, " ").trim();
       const toSlash = (v) => Array.isArray(v) ? v.join(" / ") : (v ?? "");
 
-      // ✅ 住み替え理由 表記仕様：
-      //   「 / その他」を「 ／その他：」に。
-      //   記入がある場合は「：」に続けて内容を表記。
+      // 住み替え理由 表記仕様：
+      // 「 / その他」を「 ／その他：」に。
+      // 記入がある場合は：に続けて表記。
       const buildReasonsDisplay = (reasonsArr, otherDetail) => {
         if (!Array.isArray(reasonsArr) || reasonsArr.length === 0) return "";
 
@@ -894,10 +900,7 @@
           occupation: form.occupation.value.trim(),
           moveIn: form.moveIn.value.trim(),
 
-          // ✅ 表示用reasonsを新仕様で生成
           reasons: buildReasonsDisplay(reasons, otherText),
-
-          // ✅ 「その他」内容を個別変数でも送る（テンプレ側で使う場合に備えて）
           reasonOtherDetail: otherText,
 
           area: clean(form.area.value.trim()),
