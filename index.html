@@ -293,13 +293,6 @@
       .grid-2{ grid-template-columns: 1fr 1fr; }
     }
 
-    /* ✅ 右列に「LINE表示名 → ご職業」を縦積みするためのラッパ */
-    .stack-col{
-      display: grid;
-      gap: 16px;
-      align-content: start;
-    }
-
     .checks{
       display: grid;
       gap: 10px 14px;
@@ -552,43 +545,38 @@
 
       <form id="consultForm" novalidate>
         <div class="section">
+          <!-- ✅ 指定順：お名前 → LINE表示名 → ご職業 -->
+          <div class="field">
+            <div class="section-title">お名前 <span class="req">必須</span></div>
+            <input id="name" name="name" type="text" required />
+            <div class="error" data-error-for="name">お名前を入力してください。</div>
+          </div>
 
-          <!-- ✅ 名前(左) / 右列に LINE表示名→ご職業 -->
-          <div class="grid-2">
-            <div class="field">
-              <div class="section-title">お名前 <span class="req">必須</span></div>
-              <input id="name" name="name" type="text" required />
-              <div class="error" data-error-for="name">お名前を入力してください。</div>
-            </div>
+          <div class="field">
+            <div class="section-title">LINE表示名 <span class="req">必須</span></div>
+            <input
+              id="lineName"
+              name="lineName"
+              type="text"
+              required
+            />
+            <div class="error" data-error-for="lineName">LINE表示名を入力してください。</div>
+          </div>
 
-            <div class="stack-col">
-              <div class="field" style="margin-bottom:0;">
-                <div class="section-title">LINE表示名 <span class="req">必須</span></div>
-                <input
-                  id="lineName"
-                  name="lineName"
-                  type="text"
-                  required
-                />
-                <div class="error" data-error-for="lineName">LINE表示名を入力してください。</div>
-              </div>
-
-              <div class="field" style="margin-bottom:0;">
-                <div class="section-title">ご職業 <span class="req">必須</span></div>
-                <select id="occupation" name="occupation" required>
-                  <option value="">選択してください</option>
-                  <option>会社員</option>
-                  <option>公務員</option>
-                  <option>派遣・アルバイト</option>
-                  <option>個人事業主・自営業</option>
-                  <option>経営者・役員</option>
-                  <option>夜職</option>
-                  <option>学生</option>
-                  <option>無職・その他</option>
-                </select>
-                <div class="error" data-error-for="occupation">ご職業を選択してください。</div>
-              </div>
-            </div>
+          <div class="field">
+            <div class="section-title">ご職業 <span class="req">必須</span></div>
+            <select id="occupation" name="occupation" required>
+              <option value="">選択してください</option>
+              <option>会社員</option>
+              <option>公務員</option>
+              <option>派遣・アルバイト</option>
+              <option>個人事業主・自営業</option>
+              <option>経営者・役員</option>
+              <option>夜職</option>
+              <option>学生</option>
+              <option>無職・その他</option>
+            </select>
+            <div class="error" data-error-for="occupation">ご職業を選択してください。</div>
           </div>
 
           <div class="grid-2">
@@ -604,6 +592,8 @@
               </select>
               <div class="error" data-error-for="moveIn">ご入居時期を選択してください。</div>
             </div>
+
+            <!-- ❌ 削除：職場の最寄り駅 -->
           </div>
         </div>
 
@@ -661,7 +651,6 @@
             <div class="error" data-error-for="layouts">希望の間取りを1つ以上選択してください。</div>
           </div>
 
-          <!-- 左：家賃上限 / 右：初期費用予算→分割希望→築年数 -->
           <div class="grid-2">
             <div class="field">
               <div class="section-title">お家賃の上限（管理費込） <span class="req">必須</span></div>
@@ -679,43 +668,20 @@
               <div class="error" data-error-for="rentMax">お家賃の上限を入力してください。</div>
             </div>
 
-            <div class="stack-col">
-              <div class="field" style="margin-bottom:0;">
-                <div class="section-title">初期費用のご予算 <span class="hint">任意</span></div>
-                <input
-                  id="initialCostBudget"
-                  name="initialCostBudget"
-                  type="number"
-                  inputmode="decimal"
-                  step="0.1"
-                  min="0"
-                  placeholder="例：30 / 40 / 50"
-                />
-                <div class="hint">単位は「万円」を想定しています。</div>
-              </div>
-
-              <div class="field" style="margin-bottom:0;">
-                <label class="check-item" style="padding: 12px 10px;">
-                  <input type="checkbox" id="wantSplitPayment" name="wantSplitPayment" value="希望する" />
-                  分割払いを希望する
-                </label>
-              </div>
-
-              <div class="field" style="margin-bottom:0;">
-                <div class="section-title">築年数 <span class="hint">任意</span></div>
-                <select id="age" name="age">
-                  <option value="">選択してください</option>
-                  <option>1年以内</option>
-                  <option>3年以内</option>
-                  <option>5年以内</option>
-                  <option>7年以内</option>
-                  <option>10年以内</option>
-                  <option>15年以内</option>
-                  <option>20年以内</option>
-                  <option>その他</option>
-                </select>
-                <!-- ✅ ヒント削除指定により消去 -->
-              </div>
+            <div class="field">
+              <div class="section-title">築年数 <span class="hint">任意</span></div>
+              <select id="age" name="age">
+                <option value="">選択してください</option>
+                <option>1年以内</option>
+                <option>3年以内</option>
+                <option>5年以内</option>
+                <option>7年以内</option>
+                <option>10年以内</option>
+                <option>15年以内</option>
+                <option>20年以内</option>
+                <option>その他</option>
+              </select>
+              <!-- ✅ 指示により削除：こだわりがなければ未選択でOK。 -->
             </div>
           </div>
 
@@ -724,7 +690,7 @@
             <textarea
               id="preferences"
               name="preferences"
-              placeholder="例：2階以上/バストイレ別/宅配BOX /角部屋/ペット可/駐車場有りなど"
+              placeholder="例：2階以上/バストイレ別/宅配BOX /角部屋/ペット可/駐車場有など"
             ></textarea>
           </div>
         </div>
@@ -855,9 +821,6 @@
         return ok;
       };
 
-      // =========================
-      // その他理由UI
-      // =========================
       const syncOtherReasonUI = () => {
         const on = !!(reasonOtherChk && reasonOtherChk.checked);
         if (!otherReasonWrap) return;
@@ -893,26 +856,27 @@
       const clean = (s) => String(s ?? "").replace(/[\r\n]+/g, " ").trim();
       const toSlash = (v) => Array.isArray(v) ? v.join(" / ") : (v ?? "");
 
-      // ✅ 表記ルール対応：
-      // 「 / その他」→「 ／その他：」
-      // 記入がある場合は「その他：内容」
+      // ✅ 住み替え理由 表記仕様：
+      //   「 / その他」を「 ／その他：」に。
+      //   記入がある場合は「：」に続けて内容を表記。
       const buildReasonsDisplay = (reasonsArr, otherDetail) => {
         if (!Array.isArray(reasonsArr) || reasonsArr.length === 0) return "";
 
-        const mapped = reasonsArr.map(r => {
-          if (r !== "その他") return r;
-          const detail = (otherDetail || "").trim();
-          return detail ? `その他：${detail}` : `その他：`;
-        });
+        const hasOther = reasonsArr.includes("その他");
+        const base = reasonsArr.filter(r => r !== "その他");
 
-        let s = mapped.join(" / ");
+        let out = base.join(" / ");
 
-        // 見た目指定に合わせて「 その他」前の区切りだけ全角寄せ
-        // 例: "転勤・転職 / その他：xxxx" → "転勤・転職 ／その他：xxxx"
-        s = s.replace(" / その他：", " ／その他：");
-        s = s.replace(" / その他", " ／その他：");
+        if (hasOther) {
+          if (base.length > 0) {
+            out += " ／その他：";
+          } else {
+            out = "その他：";
+          }
+          if (otherDetail) out += otherDetail;
+        }
 
-        return s;
+        return out;
       };
 
       const buildEmailParams = () => {
@@ -922,8 +886,6 @@
           ? reasonOtherText.value.trim()
           : "";
 
-        const splitWanted = !!(form.wantSplitPayment && form.wantSplitPayment.checked);
-
         return {
           submittedAt: formatDateTime(new Date().toISOString()),
 
@@ -932,20 +894,17 @@
           occupation: form.occupation.value.trim(),
           moveIn: form.moveIn.value.trim(),
 
+          // ✅ 表示用reasonsを新仕様で生成
           reasons: buildReasonsDisplay(reasons, otherText),
+
+          // ✅ 「その他」内容を個別変数でも送る（テンプレ側で使う場合に備えて）
           reasonOtherDetail: otherText,
 
           area: clean(form.area.value.trim()),
           layouts: toSlash(layouts),
-
           rentMaxManYen: form.rentMax.value ? String(form.rentMax.value) : "",
-          initialCostBudgetManYen: form.initialCostBudget && form.initialCostBudget.value
-            ? String(form.initialCostBudget.value)
-            : "",
-
-          wantSplitPayment: splitWanted ? "希望する" : "",
-
           buildingAge: form.age.value.trim(),
+
           preferences: form.preferences.value.trim(),
           phone: form.phone.value.trim()
         };
