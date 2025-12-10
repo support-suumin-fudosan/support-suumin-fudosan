@@ -718,16 +718,19 @@
     <footer></footer>
   </div>
 
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
   <script>
     (function(){
       // =========================
-      // GAS endpoint
+      // EmailJS 設定（ユーザー指定値）
       // =========================
-      const GAS_ENDPOINT =
-        "https://script.google.com/macros/s/AKfycbww0vFkft76MXu3TIrleEQgfXekW0Fpi6KH_xlTc2ILIyIgqdaTXQvw8oIctswAb8xlhg/exec";
+      const EMAILJS_SERVICE_ID  = "service_sgac4or";
+      const EMAILJS_TEMPLATE_ID = "template_v2ls78f";
+      const EMAILJS_PUBLIC_KEY  = "QedlQxUXH2yDJJvjU";
 
-      // GASが宛先を可変にできる設計なら拾わせる（無視されてもOK）
-      const DEST_EMAIL = "nao.04252001aeo.1977@gmail.com";
+      emailjs.init(EMAILJS_PUBLIC_KEY);
 
       const form = document.getElementById("consultForm");
       const msg = document.getElementById("formMsg");
@@ -820,93 +823,51 @@
       }
       syncOtherReasonUI();
 
-      const buildPayload = () => {
+      // =========================
+      // EmailJS 用パラメータ構築
+      // =========================
+      const clean = (s) => String(s ?? "").replace(/[\r\n]+/g, " ").trim();
+      const toSlash = (v) => Array.isArray(v) ? v.join(" / ") : (v ?? "");
+
+      const buildEmailParams = () => {
         const reasons = getCheckedValues(`input[name="reasons"]`);
+        const layouts = getCheckedValues(`input[name="layouts"]`);
         const otherText = (reasonOtherChk && reasonOtherChk.checked && reasonOtherText)
           ? reasonOtherText.value.trim()
           : "";
 
         return {
-          // 受信先を可変にしたGASなら利用できる
-          destinationEmail: DEST_EMAIL,
-
-          name: form.name.value.trim(),
-          occupation: form.occupation.value.trim(),
-          moveIn: form.moveIn.value.trim(),
-          reasons,
-          reasonOtherDetail: otherText,
-          area: form.area.value.trim(),
-          workStation: form.workStation.value.trim(),
-          layouts: getCheckedValues(`input[name="layouts"]`),
-          rentMaxManYen: Number(form.rentMax.value || 0),
-          buildingAge: form.age.value.trim(),
-          preferences: form.preferences.value.trim(),
-          phone: form.phone.value.trim(),
           submittedAt: new Date().toISOString(),
 
-          // “どのページから来たか”判別用
-          source: "suumin-web-form-v1"
+          name: clean(form.name.value.trim()),
+          occupation: form.occupation.value.trim(),
+          moveIn: form.moveIn.value.trim(),
+
+          reasons: toSlash(reasons),
+          reasonOtherDetail: otherText,
+
+          area: clean(form.area.value.trim()),
+          workStation: form.workStation.value.trim(),
+          layouts: toSlash(layouts),
+          rentMaxManYen: form.rentMax.value ? String(form.rentMax.value) : "",
+          buildingAge: form.age.value.trim(),
+
+          preferences: form.preferences.value.trim(),
+          phone: form.phone.value.trim(),
+
+          // テンプレに変数が無くても害なし
+          lineName: "",
+          lineUserId: ""
         };
       };
 
-      // =========================
-      // GAS送信（JSON形式で確実な方法に変更）
-      // ※環境によってはCORS/プリフライトが原因で失敗する可能性があるため
-      //   念のため旧方式(no-cors)へフォールバックを用意
-      // =========================
-      const postToGAS = async (payload) => {
-        // 1) JSON送信（推奨）
-        try{
-          const res = await fetch(GAS_ENDPOINT, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-            cache: "no-store"
-          });
-
-          if (res && res.ok) {
-            return true;
-          }
-
-          // res.okが取れる環境ならログに残す
-          console.error("GAS送信失敗: レスポンスエラー", res && res.status);
-        }catch(err){
-          // ブラウザ/WEBVIEWによってはここに落ちる
-          console.warn("GAS JSON送信で例外", err);
-        }
-
-        // 2) フォールバック：URLSearchParams + no-cors
-        try{
-          const params = new URLSearchParams();
-
-          Object.entries(payload).forEach(([k, v]) => {
-            if (Array.isArray(v)) {
-              params.append(k, v.join(" / "));
-              v.forEach(item => params.append(`${k}[]`, item));
-            } else if (v !== undefined && v !== null) {
-              params.append(k, String(v));
-            } else {
-              params.append(k, "");
-            }
-          });
-
-          await fetch(GAS_ENDPOINT, {
-            method: "POST",
-            body: params,
-            mode: "no-cors",
-            cache: "no-store"
-          });
-
-          return true;
-        }catch(err){
-          console.error("GASフォールバック送信も失敗", err);
-        }
-
-        return false;
+      const sendViaEmailJS = async (params) => {
+        return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
       };
 
+      // =========================
+      // 送信完了ビュー
+      // =========================
       const showThankYouView = () => {
         try{
           if (document.activeElement && typeof document.activeElement.blur === "function") {
@@ -933,6 +894,9 @@
         window.scrollTo({ top: 0, behavior: "auto" });
       };
 
+      // =========================
+      // ライブ入力でエラー解除
+      // =========================
       const wireLiveClear = () => {
         form.name.addEventListener("input", () => {
           if (validators.name()) showError("name", false);
@@ -979,6 +943,9 @@
 
       wireLiveClear();
 
+      // =========================
+      // Submit
+      // =========================
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         msg.textContent = "";
@@ -986,34 +953,36 @@
         const ok = validateAll();
         if (!ok) return;
 
-        const payload = buildPayload();
-
-        // ボタン連打防止
         const submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) {
           submitBtn.disabled = true;
           submitBtn.style.filter = "grayscale(0.15)";
         }
+
         msg.textContent = "送信中です…";
 
-        // ① GASへ送信（メール用）
-        let gasOk = false;
         try{
-          gasOk = await postToGAS(payload);
+          const params = buildEmailParams();
+          await sendViaEmailJS(params);
+
+          msg.textContent = "送信が完了しました。";
+          showThankYouView();
+
         }catch(err){
-          console.warn("GAS送信失敗", err);
-        }
-
-        msg.textContent = gasOk ? "送信が完了しました。" : "送信が完了しました（通信が不安定な可能性があります）。";
-
-        showThankYouView();
-
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.style.filter = "";
+          console.error("EmailJS送信失敗", err);
+          msg.textContent = "送信に失敗しました。通信環境をご確認のうえ、再度お試しください。";
+          alert("送信に失敗しました。通信環境をご確認のうえ、再度お試しください。");
+        }finally{
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.filter = "";
+          }
         }
       });
 
+      // =========================
+      // Reset
+      // =========================
       form.addEventListener("reset", () => {
         ["name","occupation","moveIn","reasons","area","layouts","rentMax","phone"]
           .forEach(k => showError(k, false));
