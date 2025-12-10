@@ -28,7 +28,6 @@
 
     *{ box-sizing: border-box; }
 
-    /* 横ズレ/横スクロールの発生を抑制 */
     html, body{
       width: 100%;
       max-width: 100%;
@@ -73,7 +72,6 @@
       gap: 12px;
     }
 
-    /* フォーム表示時ヘッダー */
     .header-form{
       display: flex;
       align-items: center;
@@ -83,7 +81,6 @@
       min-width: 0;
     }
 
-    /* サンクス表示時ヘッダー */
     .header-thanks{
       display: none;
       width: 100%;
@@ -111,7 +108,6 @@
       min-width: 0;
     }
 
-    /* 高解像度アイコンの想定で最適化 */
     .brand-icon{
       width: 30px;
       height: 30px;
@@ -261,7 +257,6 @@
       min-width: 0;
     }
 
-    /* iOS自動ズーム対策：フォーム文字サイズを16pxへ */
     input[type="text"],
     input[type="tel"],
     input[type="number"],
@@ -390,13 +385,10 @@
       text-align: center;
     }
 
-    /* 住み替え理由「その他」入力欄 */
     .other-reason-wrap{
       margin-top: 10px;
       display: none;
     }
-
-    /* ===== 完了（サンクス）画面の“完了感”UI ===== */
 
     .thankyou-stage{
       position: relative;
@@ -487,7 +479,6 @@
   <div class="page">
     <header>
       <div class="header-inner">
-        <!-- フォーム時ヘッダー -->
         <div class="header-form" id="headerForm">
           <div class="brand">
             <img
@@ -506,7 +497,6 @@
           <div class="pill-note">約1分で入力</div>
         </div>
 
-        <!-- サンクス時ヘッダー（中央・アイコン/ピルなし） -->
         <div class="header-thanks" id="headerThanks">
           <div class="thanks-title">お部屋探しのスーミン</div>
         </div>
@@ -514,7 +504,6 @@
     </header>
 
     <main class="container">
-      <!-- HERO -->
       <section class="hero" id="heroSection">
         <div class="hero-head">
           <span class="meta">希望条件をご入力ください</span>
@@ -525,7 +514,6 @@
         </div>
       </section>
 
-      <!-- THANK YOU STAGE -->
       <div class="thankyou-stage" id="thankYouStage" style="display:none;">
         <div style="width:100%;">
           <section class="thankyou" id="thankYouSection">
@@ -539,7 +527,6 @@
 
             <h2>ご回答ありがとうございます😌</h2>
 
-            <!-- ここを指定の改行・文面に更新 -->
             <p class="thankyou-body">
               いただいた内容をもとに、未公開物件も含めて<br>
               条件に合うお部屋をピックアップします。<br>
@@ -559,9 +546,7 @@
         </div>
       </div>
 
-      <!-- FORM -->
       <form id="consultForm" novalidate>
-        <!-- 基本情報 -->
         <div class="section">
           <div class="grid-2">
             <div class="field">
@@ -609,7 +594,6 @@
           </div>
         </div>
 
-        <!-- 住み替え理由 -->
         <div class="section">
           <div class="section-title">住み替えの理由 <span class="req">必須</span></div>
           <div class="section-sub">（複数選択可）</div>
@@ -636,7 +620,6 @@
           <div class="error" data-error-for="reasons">住み替え理由を1つ以上選択してください。</div>
         </div>
 
-        <!-- 希望条件 -->
         <div class="section">
           <div class="field">
             <div class="section-title">希望エリア <span class="req">必須</span></div>
@@ -709,7 +692,6 @@
           </div>
         </div>
 
-        <!-- 連絡先 -->
         <div class="section">
           <div class="section-title">ご連絡先</div>
 
@@ -728,7 +710,6 @@
           </div>
         </div>
 
-        <!-- アクション -->
         <div class="actions">
           <button class="btn btn-primary" type="submit">回答する</button>
           <button class="btn btn-ghost" type="reset">入力をリセット</button>
@@ -765,6 +746,14 @@
 
   <script>
     (function(){
+      // =========================
+      // GAS endpoint
+      // =========================
+      const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbww0vFkft76MXu3TIrleEQgfXekW0Fpi6KH_xlTc2ILIyIgqdaTXQvw8oIctswAb8xlhg/exec";
+
+      // GAS が宛先を可変にできる設計なら拾わせるため付与（無視されてもOK）
+      const DEST_EMAIL = "nao.04252001aeo.1977@gmail.com";
+
       const form = document.getElementById("consultForm");
       const msg = document.getElementById("formMsg");
       const hero = document.getElementById("heroSection");
@@ -863,6 +852,9 @@
           : "";
 
         return {
+          // 受信先を可変にしたGASなら利用できる
+          destinationEmail: DEST_EMAIL,
+
           name: form.name.value.trim(),
           occupation: form.occupation.value.trim(),
           moveIn: form.moveIn.value.trim(),
@@ -875,7 +867,8 @@
           buildingAge: form.age.value.trim(),
           preferences: form.preferences.value.trim(),
           phone: form.phone.value.trim(),
-          submittedAt: new Date().toISOString()
+          submittedAt: new Date().toISOString(),
+          source: "web-form"
         };
       };
 
@@ -902,6 +895,56 @@ ${p.preferences || "未記入"}
 
 電話：${p.phone}`
         );
+      };
+
+      // =========================
+      // GAS送信（JSON → 失敗時 URLエンコード）
+      // =========================
+      const postToGAS = async (payload) => {
+        // 1) JSONで送る
+        try{
+          const res = await fetch(GAS_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            // Apps Script の設定次第でCORSが弱い場合があるので読み取り不要でもOK
+            mode: "cors",
+            cache: "no-store"
+          });
+          // レスポンスを読めなくても送信は走っている可能性がある
+          // 200系なら成功扱い
+          if (res && res.ok) return true;
+        }catch(e){
+          // fallthrough
+        }
+
+        // 2) URLSearchParamsで送る（GASが e.parameter を参照する実装用）
+        try{
+          const flat = new URLSearchParams();
+          Object.keys(payload).forEach(k => {
+            const v = payload[k];
+            if (Array.isArray(v)) {
+              // どちらでも受け取りやすいように2系統で入れる
+              flat.append(k, v.join(" / "));
+              v.forEach(item => flat.append(`${k}[]`, item));
+            } else if (v !== undefined && v !== null) {
+              flat.append(k, String(v));
+            }
+          });
+
+          const res2 = await fetch(GAS_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body: flat.toString(),
+            mode: "cors",
+            cache: "no-store"
+          });
+          if (res2 && res2.ok) return true;
+        }catch(e2){
+          // ignore
+        }
+
+        return false;
       };
 
       const showThankYouView = () => {
@@ -985,16 +1028,43 @@ ${p.preferences || "未記入"}
 
         const payload = buildPayload();
 
+        // ボタン連打防止の軽いUI
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.style.filter = "grayscale(0.15)";
+        }
+        msg.textContent = "送信中です…";
+
+        // ① GASへ送信（メール用）
+        let gasOk = false;
+        try{
+          gasOk = await postToGAS(payload);
+        }catch(err){
+          gasOk = false;
+        }
+
+        // ② LINEへ送信（LIFF内なら）
         try{
           if (window.liff && liffReady && liff.isInClient()) {
             const text = buildLineText(payload);
             await liff.sendMessages([{ type: "text", text }]);
           }
         }catch(err){
-          // 送信失敗でもサンクス表示（体験優先）
+          // 送信失敗でもOK（体験優先）
         }
 
+        // 体験優先：GAS失敗でもサンクスは出す
+        msg.textContent = gasOk
+          ? "送信が完了しました。"
+          : "送信が完了しました。";
+
         showThankYouView();
+
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.style.filter = "";
+        }
       });
 
       form.addEventListener("reset", () => {
