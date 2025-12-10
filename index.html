@@ -6,7 +6,7 @@
   <title>ご相談フォーム</title>
   <meta name="description" content="お部屋探しのご希望条件を1分ほどで入力できる相談フォームです。" />
 
-  <!-- LIFF SDK -->
+  <!-- LIFF SDK（プロフィール取得用：任意） -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <style>
@@ -28,7 +28,6 @@
 
     *{ box-sizing: border-box; }
 
-    /* 横ズレ/横スクロールの発生を抑制 */
     html, body{
       width: 100%;
       max-width: 100%;
@@ -73,7 +72,6 @@
       gap: 12px;
     }
 
-    /* フォーム表示時ヘッダー */
     .header-form{
       display: flex;
       align-items: center;
@@ -83,7 +81,6 @@
       min-width: 0;
     }
 
-    /* サンクス表示時ヘッダー */
     .header-thanks{
       display: none;
       width: 100%;
@@ -111,7 +108,6 @@
       min-width: 0;
     }
 
-    /* 高解像度アイコンの想定で最適化 */
     .brand-icon{
       width: 30px;
       height: 30px;
@@ -261,7 +257,6 @@
       min-width: 0;
     }
 
-    /* iOS自動ズーム対策：フォーム文字サイズを16pxへ */
     input[type="text"],
     input[type="tel"],
     input[type="number"],
@@ -390,13 +385,10 @@
       text-align: center;
     }
 
-    /* 住み替え理由「その他」入力欄 */
     .other-reason-wrap{
       margin-top: 10px;
       display: none;
     }
-
-    /* ===== 完了（サンクス）画面の“完了感”UI ===== */
 
     .thankyou-stage{
       position: relative;
@@ -487,7 +479,6 @@
   <div class="page">
     <header>
       <div class="header-inner">
-        <!-- フォーム時ヘッダー -->
         <div class="header-form" id="headerForm">
           <div class="brand">
             <img
@@ -506,7 +497,6 @@
           <div class="pill-note">約1分で入力</div>
         </div>
 
-        <!-- サンクス時ヘッダー -->
         <div class="header-thanks" id="headerThanks">
           <div class="thanks-title">お部屋探しのスーミン</div>
         </div>
@@ -514,7 +504,6 @@
     </header>
 
     <main class="container">
-      <!-- HERO -->
       <section class="hero" id="heroSection">
         <div class="hero-head">
           <span class="meta">希望条件をご入力ください</span>
@@ -525,7 +514,6 @@
         </div>
       </section>
 
-      <!-- THANK YOU STAGE -->
       <div class="thankyou-stage" id="thankYouStage" style="display:none;">
         <div style="width:100%;">
           <section class="thankyou" id="thankYouSection">
@@ -536,7 +524,6 @@
             </div>
 
             <div class="done-kicker">送信完了</div>
-
             <h2>ご回答ありがとうございます😌</h2>
 
             <p class="thankyou-body">
@@ -558,9 +545,7 @@
         </div>
       </div>
 
-      <!-- FORM -->
       <form id="consultForm" novalidate>
-        <!-- 基本情報 -->
         <div class="section">
           <div class="grid-2">
             <div class="field">
@@ -608,7 +593,6 @@
           </div>
         </div>
 
-        <!-- 住み替え理由 -->
         <div class="section">
           <div class="section-title">住み替えの理由 <span class="req">必須</span></div>
           <div class="section-sub">（複数選択可）</div>
@@ -635,7 +619,6 @@
           <div class="error" data-error-for="reasons">住み替え理由を1つ以上選択してください。</div>
         </div>
 
-        <!-- 希望条件 -->
         <div class="section">
           <div class="field">
             <div class="section-title">希望エリア <span class="req">必須</span></div>
@@ -708,7 +691,6 @@
           </div>
         </div>
 
-        <!-- 連絡先 -->
         <div class="section">
           <div class="section-title">ご連絡先</div>
 
@@ -727,7 +709,6 @@
           </div>
         </div>
 
-        <!-- アクション -->
         <div class="actions">
           <button class="btn btn-primary" type="submit">回答する</button>
           <button class="btn btn-ghost" type="reset">入力をリセット</button>
@@ -741,16 +722,12 @@
 
   <script>
     // =========================
-    // LIFF settings
+    // LIFF settings（プロフィール取得は任意）
     // =========================
     const LIFF_ID = "2008661885-z2ZKEaeA";
 
-    /**
-     * 任意：GAS保存を併用したい場合だけ入れる
-     * 例) https://script.google.com/macros/s/XXXX/exec
-     * 空のままなら送信しません。
-     */
-    const GAS_URL = "";
+    // あなたのGAS Web App URL（反映済み）
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwo6R0zvkaXFBM1AOskNLpAWini8lwZgP2MqwccD3uEhFeeVOPj7OjsF2TrdXUaa_7h9A/exec";
 
     let liffReady = false;
 
@@ -762,10 +739,6 @@
           withLoginOnExternalBrowser: true
         });
         liffReady = true;
-
-        // 外部ブラウザでログインが必要なケースに備えたい場合は任意で有効化
-        // if (!liff.isLoggedIn()) liff.login();
-
       }catch(e){
         liffReady = false;
       }
@@ -892,35 +865,6 @@
         };
       };
 
-      const safeJoin = (arr) => {
-        return (Array.isArray(arr) && arr.length) ? arr.join(" / ") : "未選択";
-      };
-
-      const buildLineText = (p) => {
-        const reasons = safeJoin(p.reasons);
-        const layouts = safeJoin(p.layouts);
-        const otherLine = p.reasonOtherDetail ? `\nその他理由：${p.reasonOtherDetail}` : "";
-
-        return (
-`【希望条件フォーム】
-お名前：${p.name}
-職業：${p.occupation}
-入居時期：${p.moveIn}
-住み替え理由：${reasons}${otherLine}
-
-希望エリア：${p.area}
-職場最寄り：${p.workStation || "未記入"}
-間取り：${layouts}
-家賃上限：${p.rentMaxManYen}万円
-築年数：${p.buildingAge || "指定なし"}
-
-こだわり：
-${p.preferences || "未記入"}
-
-電話：${p.phone}`
-        );
-      };
-
       const enrichWithProfile = async (payload) => {
         try{
           if (window.liff && liffReady && liff.isLoggedIn()) {
@@ -935,15 +879,14 @@ ${p.preferences || "未記入"}
         return payload;
       };
 
-      const postToGasIfEnabled = async (payload) => {
-        if (!GAS_URL) return;
-        try{
-          await fetch(GAS_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-        }catch(e){}
+      const postToGas = async (payload) => {
+        if (!GAS_URL) throw new Error("GAS_URL is empty");
+        // CORS事故回避のため text/plain
+        await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
       };
 
       const showThankYouView = () => {
@@ -1028,17 +971,14 @@ ${p.preferences || "未記入"}
         let payload = buildPayload();
         payload = await enrichWithProfile(payload);
 
-        // 1) GAS保存（任意）
-        await postToGasIfEnabled(payload);
-
-        // 2) 公式LINEにテキストで落とす（LINEアプリ内のみ）
         try{
-          if (window.liff && liffReady && liff.isInClient()) {
-            const text = buildLineText(payload);
-            await liff.sendMessages([{ type: "text", text }]);
-            // liff.closeWindow(); // 任意
-          }
-        }catch(err){}
+          await postToGas(payload);
+        }catch(err){
+          // UX優先：通信失敗でもサンクスへ
+          // もし厳密運用したいなら下の2行に変更
+          // msg.textContent = "送信に失敗しました。通信環境を確認して再度お試しください。";
+          // return;
+        }
 
         showThankYouView();
       });
