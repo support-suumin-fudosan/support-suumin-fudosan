@@ -106,33 +106,29 @@
     }
 
     .brand-icon{
-      width: 30px;
-      height: 30px;
-      border-radius: 9px;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
       object-fit: cover;
-      flex: 0 0 30px;
+      flex: 0 0 32px;
       background: #fff;
       box-shadow:
         0 2px 8px rgba(2, 24, 12, 0.12),
-        inset 0 0 0 1px rgba(255,255,255,0.5);
+        inset 0 0 0 1px rgba(255,255,255,0.6);
       image-rendering: auto;
     }
 
+    /* シンプルな予備アイコン（白＋薄い枠） */
     .brand-badge{
-      width: 30px;
-      height: 30px;
-      border-radius: 9px;
-      background: linear-gradient(135deg, var(--accent), #38d48a);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5);
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      box-shadow: 0 2px 6px rgba(15,23,42,0.12);
       display: none;
     }
 
-    .brand small{
-      font-weight: 600;
-      color: var(--muted);
-    }
-
-    /* 免許番号のスタイル */
     .brand-license{
       display: block;
       font-size: 10px;
@@ -261,11 +257,6 @@
       gap: 8px;
       margin-bottom: 14px;
       min-width: 0;
-    }
-
-    /* LINE表示名の後だけ、ほんの少し余白を増やす */
-    .field.spacer-after{
-      margin-bottom: 22px;
     }
 
     input[type="text"],
@@ -432,7 +423,6 @@
       animation: fadeInSoft 200ms ease-out;
     }
 
-    /* 完了バッジを“もう少し緑っぽい薄色”へ */
     .done-badge{
       width: 54px;
       height: 54px;
@@ -503,7 +493,6 @@
 
             <div>
               <div>ご相談フォーム</div>
-              <small>お部屋探しのスーミン</small>
               <span class="brand-license">東京都知事（2）第101896号</span>
             </div>
           </div>
@@ -561,22 +550,11 @@
 
       <form id="consultForm" novalidate>
         <div class="section">
-          <!-- 指定順：お名前 → LINE表示名 → ご職業 -->
+          <!-- 指定順：LINEプロフィール名 → ご職業 -->
           <div class="field">
-            <div class="section-title">お名前 <span class="req">必須</span></div>
+            <div class="section-title">LINEプロフィール名 <span class="req">必須</span></div>
             <input id="name" name="name" type="text" required />
-            <div class="error" data-error-for="name">お名前を入力してください。</div>
-          </div>
-
-          <div class="field spacer-after">
-            <div class="section-title">LINE表示名 <span class="req">必須</span></div>
-            <input
-              id="lineName"
-              name="lineName"
-              type="text"
-              required
-            />
-            <div class="error" data-error-for="lineName">LINE表示名を入力してください。</div>
+            <div class="error" data-error-for="name">LINEプロフィール名を入力してください。</div>
           </div>
 
           <div class="field">
@@ -711,17 +689,16 @@
           <div class="section-title">ご連絡先</div>
 
           <div class="field">
-            <div class="section-title">お電話番号 <span class="req">必須</span></div>
+            <div class="section-title">お電話番号 <span class="hint">任意</span></div>
             <input
               id="phone"
               name="phone"
               type="tel"
               inputmode="tel"
               placeholder="例：09012345678"
-              required
               pattern="^[0-9-+ ]{9,15}$"
             />
-            <div class="error" data-error-for="phone">有効なお電話番号を入力してください。</div>
+            <div class="error" data-error-for="phone">入力する場合は有効なお電話番号を入力してください。</div>
           </div>
         </div>
 
@@ -741,9 +718,6 @@
 
   <script>
     (function(){
-      // =========================
-      // EmailJS 設定（ユーザー指定値）
-      // =========================
       const EMAILJS_SERVICE_ID  = "service_sgac4or";
       const EMAILJS_TEMPLATE_ID = "template_v2ls78f";
       const EMAILJS_PUBLIC_KEY  = "QedlQxUXH2yDJJvjU";
@@ -780,31 +754,13 @@
 
       const isPhoneValidForSubmit = (raw) => {
         const d = onlyDigits(raw);
+        if (!d) return true; // 未入力はOK（任意）
         return d.length === 10 || d.length === 11;
       };
 
-      const isPhoneValidForLive = (raw) => {
-        const d = onlyDigits(raw);
-        if (!d) return false;
-        if (isPhoneValidForSubmit(raw)) return true;
-
-        if (d.length >= 3) {
-          const p3 = d.slice(0, 3);
-          if (["090","080","070","050"].includes(p3)) return true;
-        }
-        if (d.length >= 2) {
-          const p2 = d.slice(0, 2);
-          if (["03","06"].includes(p2)) return true;
-        }
-        return false;
-      };
-
-      // =========================
       // Validators
-      // =========================
       const validators = {
         name: () => form.name.value.trim().length > 0,
-        lineName: () => form.lineName.value.trim().length > 0,
         occupation: () => !!form.occupation.value.trim(),
         moveIn: () => !!form.moveIn.value.trim(),
         reasons: () => getCheckedValues(`input[name="reasons"]`).length > 0,
@@ -819,7 +775,7 @@
 
       const validateAll = () => {
         let ok = true;
-        const keys = ["name","lineName","occupation","moveIn","reasons","area","layouts","rentMax","phone"];
+        const keys = ["name","occupation","moveIn","reasons","area","layouts","rentMax","phone"];
 
         keys.forEach(k => showError(k, false));
 
@@ -845,9 +801,6 @@
       }
       syncOtherReasonUI();
 
-      // =========================
-      // submittedAt 表記整形
-      // =========================
       const pad2 = (n) => String(n).padStart(2, "0");
 
       const formatDateTime = (iso) => {
@@ -862,15 +815,9 @@
         return `${y}-${m}-${day} ${h}:${min}:${s}`;
       };
 
-      // =========================
-      // EmailJS 用パラメータ構築
-      // =========================
       const clean = (s) => String(s ?? "").replace(/[\r\n]+/g, " ").trim();
       const toSlash = (v) => Array.isArray(v) ? v.join(" / ") : (v ?? "");
 
-      // 住み替え理由 表記仕様：
-      // 「 / その他」を「 ／その他：」に。
-      // 記入がある場合は：に続けて表記。
       const buildReasonsDisplay = (reasonsArr, otherDetail) => {
         if (!Array.isArray(reasonsArr) || reasonsArr.length === 0) return "";
 
@@ -898,11 +845,15 @@
           ? reasonOtherText.value.trim()
           : "";
 
+        const profileName = clean(form.name.value.trim());
+
         return {
           submittedAt: formatDateTime(new Date().toISOString()),
 
-          name: clean(form.name.value.trim()),
-          lineName: clean(form.lineName.value.trim()),
+          // LINEプロフィール名を name / lineName 両方に載せておく
+          name: profileName,
+          lineName: profileName,
+
           occupation: form.occupation.value.trim(),
           moveIn: form.moveIn.value.trim(),
 
@@ -923,9 +874,6 @@
         return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
       };
 
-      // =========================
-      // 送信完了ビュー
-      // =========================
       const showThankYouView = () => {
         try{
           if (document.activeElement && typeof document.activeElement.blur === "function") {
@@ -952,16 +900,9 @@
         window.scrollTo({ top: 0, behavior: "auto" });
       };
 
-      // =========================
-      // ライブ入力でエラー解除
-      // =========================
       const wireLiveClear = () => {
         form.name.addEventListener("input", () => {
           if (validators.name()) showError("name", false);
-        });
-
-        form.lineName.addEventListener("input", () => {
-          if (validators.lineName()) showError("lineName", false);
         });
 
         form.occupation.addEventListener("change", () => {
@@ -994,8 +935,7 @@
         });
 
         form.phone.addEventListener("input", () => {
-          const v = form.phone.value.trim();
-          if (isPhoneValidForLive(v)) showError("phone", false);
+          if (validators.phone()) showError("phone", false);
         });
 
         form.phone.addEventListener("blur", () => {
@@ -1005,9 +945,6 @@
 
       wireLiveClear();
 
-      // =========================
-      // Submit
-      // =========================
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         msg.textContent = "";
@@ -1042,11 +979,8 @@
         }
       });
 
-      // =========================
-      // Reset
-      // =========================
       form.addEventListener("reset", () => {
-        ["name","lineName","occupation","moveIn","reasons","area","layouts","rentMax","phone"]
+        ["name","occupation","moveIn","reasons","area","layouts","rentMax","phone"]
           .forEach(k => showError(k, false));
         msg.textContent = "";
 
