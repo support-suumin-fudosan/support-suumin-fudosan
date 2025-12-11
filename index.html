@@ -105,26 +105,26 @@
       min-width: 0;
     }
 
+    /* ご相談フォーム左アイコン：薄い綺麗な緑 */
     .brand-icon{
       width: 32px;
       height: 32px;
       border-radius: 10px;
       object-fit: cover;
       flex: 0 0 32px;
-      background: #fff;
+      background: linear-gradient(135deg, #e3f8f0, #f6fffb);
       box-shadow:
         0 2px 8px rgba(2, 24, 12, 0.12),
-        inset 0 0 0 1px rgba(255,255,255,0.6);
+        inset 0 0 0 1px rgba(255,255,255,0.7);
       image-rendering: auto;
     }
 
-    /* シンプルな予備アイコン（白＋薄い枠） */
     .brand-badge{
       width: 32px;
       height: 32px;
       border-radius: 10px;
-      background: #ffffff;
-      border: 1px solid var(--line);
+      background: linear-gradient(135deg, #dff7ea, #f5fffb);
+      border: 1px solid rgba(31,157,99,0.20);
       box-shadow: 0 2px 6px rgba(15,23,42,0.12);
       display: none;
     }
@@ -550,7 +550,6 @@
 
       <form id="consultForm" novalidate>
         <div class="section">
-          <!-- 指定順：LINEプロフィール名 → ご職業 -->
           <div class="field">
             <div class="section-title">LINEプロフィール名 <span class="req">必須</span></div>
             <input id="name" name="name" type="text" required />
@@ -698,6 +697,7 @@
               placeholder="例：09012345678"
               pattern="^[0-9-+ ]{9,15}$"
             />
+            <div class="hint">よりスムーズなご案内が可能となります。</div>
             <div class="error" data-error-for="phone">入力する場合は有効なお電話番号を入力してください。</div>
           </div>
         </div>
@@ -758,7 +758,6 @@
         return d.length === 10 || d.length === 11;
       };
 
-      // Validators
       const validators = {
         name: () => form.name.value.trim().length > 0,
         occupation: () => !!form.occupation.value.trim(),
@@ -841,7 +840,7 @@
       const buildEmailParams = () => {
         const reasons = getCheckedValues(`input[name="reasons"]`);
         const layouts = getCheckedValues(`input[name="layouts"]`);
-        const otherText = (reasonOtherChk && reasonOtherChk.checked && reasonOtherText)
+        const otherText = (reasonOtherChk && reasonOtherText && reasonOtherChk.checked)
           ? reasonOtherText.value.trim()
           : "";
 
@@ -850,7 +849,7 @@
         return {
           submittedAt: formatDateTime(new Date().toISOString()),
 
-          // LINEプロフィール名を name / lineName 両方に載せておく
+          // LINEプロフィール名を name / lineName 両方に載せる
           name: profileName,
           lineName: profileName,
 
