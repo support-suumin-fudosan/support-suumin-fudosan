@@ -233,6 +233,12 @@
     }
     .section:first-child{ border-top: none; }
 
+    /* ★ご連絡先セクションは「薄い点線」 */
+    .section.contact-section{
+      border-top: 1px dotted rgba(0,0,0,0.14);
+      padding-top: 16px;
+    }
+
     .section-title{
       display: flex;
       align-items: baseline;
@@ -682,9 +688,26 @@
               placeholder="例：2階以上/バストイレ別/宅配BOX/角部屋/ペット可/駐車場有など"
             ></textarea>
           </div>
+
+          <!-- ★移動：物件番号（任意）を「こだわり条件」の下へ -->
+          <div class="field">
+            <div class="section-title">物件番号 <span class="hint">任意</span></div>
+            <input
+              id="propertyNo"
+              name="propertyNo"
+              type="text"
+              placeholder="例：A-001"
+              autocomplete="off"
+            />
+            <div class="hint">
+              TikTokで気になったお部屋があればご入力ください。<br>
+              （動画の概要欄に記載しています）
+            </div>
+          </div>
         </div>
 
-        <div class="section">
+        <!-- ★ここから「薄い点線」→「ご連絡先」 -->
+        <div class="section contact-section">
           <div class="section-title">ご連絡先</div>
 
           <div class="field">
@@ -699,19 +722,6 @@
             />
             <div class="hint">よりスムーズなご案内が可能となります。</div>
             <div class="error" data-error-for="phone">入力する場合は有効なお電話番号を入力してください。</div>
-          </div>
-
-          <!-- ★追加：物件番号（任意） -->
-          <div class="field">
-            <div class="section-title">物件番号 <span class="hint">任意</span></div>
-            <input
-              id="propertyNo"
-              name="propertyNo"
-              type="text"
-              placeholder="例：A-001"
-              autocomplete="off"
-            />
-            <div class="hint">TikTokで気になったお部屋があればご入力ください。</div>
           </div>
         </div>
 
@@ -880,7 +890,7 @@
           preferences: form.preferences.value.trim(),
           phone: form.phone.value.trim(),
 
-          // ★追加：物件番号（テンプレ側で {{propertyNo}} などで使えます）
+          // 物件番号（テンプレ側で {{propertyNo}} / {{propertyNumber}} で利用可能）
           propertyNo: clean((form.propertyNo && form.propertyNo.value) ? form.propertyNo.value.trim() : ""),
           propertyNumber: clean((form.propertyNo && form.propertyNo.value) ? form.propertyNo.value.trim() : "")
         };
