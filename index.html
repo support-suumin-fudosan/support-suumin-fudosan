@@ -700,6 +700,19 @@
             <div class="hint">よりスムーズなご案内が可能となります。</div>
             <div class="error" data-error-for="phone">入力する場合は有効なお電話番号を入力してください。</div>
           </div>
+
+          <!-- ★追加：物件番号（任意） -->
+          <div class="field">
+            <div class="section-title">物件番号 <span class="hint">任意</span></div>
+            <input
+              id="propertyNo"
+              name="propertyNo"
+              type="text"
+              placeholder="例：A-001"
+              autocomplete="off"
+            />
+            <div class="hint">TikTokで気になったお部屋があればご入力ください。</div>
+          </div>
         </div>
 
         <div class="actions">
@@ -865,7 +878,11 @@
           buildingAge: form.age.value.trim(),
 
           preferences: form.preferences.value.trim(),
-          phone: form.phone.value.trim()
+          phone: form.phone.value.trim(),
+
+          // ★追加：物件番号（テンプレ側で {{propertyNo}} などで使えます）
+          propertyNo: clean((form.propertyNo && form.propertyNo.value) ? form.propertyNo.value.trim() : ""),
+          propertyNumber: clean((form.propertyNo && form.propertyNo.value) ? form.propertyNo.value.trim() : "")
         };
       };
 
